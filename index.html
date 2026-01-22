@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>英単語暗記帳 (1551-1700) v10.1 Final</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --background-color: #f0f4f8;
+            --card-background-color: #ffffff;
+            --text-color-primary: #2c3e50;
+        }
+        html { box-sizing: border-box; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 10px 10px 145px 10px;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+        }
+        .main-container { width: 100%; max-width: 600px; }
+        .container {
+            background-color: var(--card-background-color);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            position: relative;
+        }
+        .tab-container { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; flex-wrap: wrap; }
+        .tab-button { padding: 6px 12px; cursor: pointer; border: 1px solid #dee2e6; background-color: #f8f9fa; font-size: 0.85em; color: #495057; border-radius: 16px; transition: all 0.2s ease; }
+        .tab-button.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        
+        .footer-controls { position: fixed; bottom: 0; left: 0; right: 0; background-color: rgba(255, 255, 255, 0.97); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 -3px 12px rgba(0,0,0,0.08); z-index: 100; padding: 8px 0; }
+        .footer-controls-inner { width: 100%; max-width: 600px; margin: 0 auto; padding: 0 10px; }
+        .status-buttons { margin-bottom: 10px; display: flex; gap: 8px;}
+        
+        .settings-menu-button { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5em; cursor: pointer; color: #555; padding: 5px; line-height: 1; }
+        .settings-dropdown { position: absolute; top: 45px; right: 15px; background-color: white; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; padding: 8px; display: none; }
+        .settings-dropdown button { display: block; width: 100%; padding: 8px 12px; font-size: 0.9em; text-align: left; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        
+        .main-filters-container { gap: 10px; margin-bottom: 15px; }
+        .status-filters { text-align: center; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+        .status-filters button { padding: 6px 10px; font-size: 0.8em; border: 1px solid #ccc; border-radius: 16px; cursor: pointer; background-color: #f8f9fa; min-width: 70px; }
+        .status-filters button.active-status-filter { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .filter-title { font-size: 0.75em; color: #666; margin-bottom: 5px; text-align: center; font-weight: bold; }
+        .display-mode-switch { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; font-size: 0.85em; color: #555; }
+        
+        #flashcard-wrapper { perspective: 1000px; }
+        #flashcard { position: relative; border: 1px solid #d1d9e0; border-radius: 10px; min-height: 120px; cursor: pointer; transform-style: preserve-3d; transition: transform 0.5s; }
+        #flashcard.is-flipped { transform: rotateY(180deg); }
+        
+        .card-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 15px; }
+        .card-face-back { transform: rotateY(180deg); }
+        
+        #play-audio-button { position: absolute; top: 8px; right: 8px; background: none; border: none; font-size: 1.4em; cursor: pointer; color: #777; z-index: 5; }
+        #japanese-display { font-size: 1.8em; font-weight: bold; color: var(--text-color-primary); text-align: center; }
+        #english-display { font-size: 2.2em; font-weight: bold; color: var(--text-color-primary); text-align: center; }
+        
+        .details-container { max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, margin-top 0.4s ease-out, opacity 0.4s ease-out; background-color: #f8f9fa; border-radius: 8px; margin-top: 0; opacity: 0; }
+        .details-container.show { max-height: 200px; margin-top: 10px; opacity: 1; }
+        .details-content { font-size: 0.9em; color: #34495e; text-align: left; padding: 10px; }
+        .details-content p { margin: 4px 0; line-height: 1.5; }
+        .word-id-display { text-align: right; font-size: 0.8em; color: #888; margin-top: 8px; }
+        
+        .status-buttons button { flex-grow: 1; padding: 8px 6px; font-size: 0.85em; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .status-buttons button.selected { font-weight: bold; transform: scale(1.05); }
+        .status-buttons button.status-not-yet { background-color: #fff3cd; color: #856404; }
+        .status-buttons button.status-ok { background-color: #d1ecf1; color: #0c5460; }
+        .status-buttons button.status-perfect { background-color: #d4edda; color: #155724; }
+        .status-buttons button.status-not-yet.selected { background-color: #ffc107; color: #333; }
+        .status-buttons button.status-ok.selected { background-color: #17a2b8; color: white; }
+        .status-buttons button.status-perfect.selected { background-color: #28a745; color: white; }
+        
+        .navigation { display: flex; flex-direction: column; align-items: center; }
+        .nav-buttons-container { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px; }
+        #progress-indicator { font-size: 0.85em; color: #555; }
+        #prev-button, #next-button { background-color: var(--primary-color); color: white; padding: 8px 14px; border: none; border-radius: 8px; font-size: 0.9em; }
+        #seek-bar { width: 100%; margin: 3px 0; }
+        
+        #status-message { margin-top:10px; font-size: 0.9em; color: #495057; min-height: 1.2em; text-align: center; }
+        .no-words-message { text-align: center; font-size: 1em; padding: 20px 10px; }
+        .hidden { display: none !important; }
+        #example-en-span span, #example-ja-span span { color: red; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="container">
+            <button class="settings-menu-button" id="settings-toggle-button" aria-label="設定メニューを開く">⚙️</button>
+            <div class="settings-dropdown" id="settings-dropdown-menu">
+                <button id="reset-data-button">学習記録をリセット</button>
+            </div>
+
+            <div class="tab-container" id="tab-container"></div>
+            <div class="main-filters-container">
+                 <div>
+                    <div class="filter-title">学習状況で絞り込み:</div>
+                    <div class="status-filters">
+                        <button data-status-filter="all_statuses">全て</button>
+                        <button data-status-filter="not_yet">まだ</button>
+                        <button data-status-filter="ok">OK</button>
+                        <button data-status-filter="perfect">完璧</button>
+                    </div>
+                </div>
+            </div>
+            <div class="display-mode-switch">
+                <label for="random-mode-checkbox">ランダム表示:</label>
+                <input type="checkbox" id="random-mode-checkbox">
+            </div>
+
+            <div id="flashcard-area">
+                <div id="flashcard-wrapper">
+                    <div id="flashcard">
+                        <div class="card-face card-face-front">
+                            <div id="japanese-display">日本語訳</div>
+                        </div>
+                        <div class="card-face card-face-back">
+                            <button id="play-audio-button" title="発音を聞く">🔊</button>
+                            <div id="english-display">English Word</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-container" id="details-container">
+                    <div class="details-content">
+                        <p id="example-en-p"><strong>例文:</strong> <span id="example-en-span"></span></p>
+                        <p id="example-ja-p"><strong>訳:</strong> <span id="example-ja-span"></span></p>
+                        <p><strong>発音:</strong> <span id="pronunciation-span"></span></p>
+                        <p><strong>品詞:</strong> <span id="pos-span"></span></p>
+                        <p class="word-id-display">ID: <span id="word-id-span"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="no-words-message" class="hidden no-words-message"></div>
+            <div id="status-message"></div>
+        </div>
+    </div>
+
+    <div class="footer-controls">
+        <div class="footer-controls-inner">
+            <div class="status-buttons">
+                <button data-status="not_yet" class="status-not-yet">まだ</button>
+                <button data-status="ok" class="status-ok">OK</button>
+                <button data-status="perfect" class="status-perfect">完璧！</button>
+            </div>
+            <div class="navigation">
+                <div class="nav-buttons-container">
+                    <button id="prev-button">← 前へ</button>
+                    <span id="progress-indicator">1 / N</span>
+                    <button id="next-button">次へ →</button>
+                </div>
+                <input type="range" id="seek-bar" value="0" min="0" max="0">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wordDataSetsText = {
+            '1551-1600': `
+名詞
+1551
+landmark
+[lǽndmɑ̀ːrk]
+名所、目印
+▶ visit some Paris <span>landmark</span>s
+パリの<span>名所</span>を訪ねる
+1552
+dementia
+[diménʃə]
+認知症
+▶ the symptoms of <span>dementia</span>
+<span>認知症</span>の症状
+1553
+flesh
+[fléʃ]
+肉、肌
+▶ <span>flesh</span> and blood
+<span>肉</span>と血
+1554
+collision
+[kəlíʒən]
+衝突
+▶ <span>collision with</span> the earth
+地球との<span>衝突</span>
+1555
+hazard
+[hǽzərd]
+危険なもの、危険要因
+▶ a <span>hazard</span> to health
+健康にとって<span>危険なもの</span>
+1556
+tomb
+[túːm]
+墓
+▶ the <span>tomb</span> of the unknown soldier
+無名戦士の<span>墓</span>
+1557
+injection
+[indʒékʃən]
+注射
+▶ take daily <span>injection</span>s
+毎日<span>注射</span>を受ける
+1558
+breakthrough
+[bréikθrùː]
+飛躍的進歩
+▶ a <span>breakthrough in</span> technology
+技術の<span>飛躍的進歩</span>
+1559
+leather
+[léðər]
+革
+▶ a <span>leather</span> bag
+<span>革</span>のかばん
+1560
+jewelry
+[dʒúːəlri]
+宝石
+▶ a <span>jewelry</span> store
+<span>宝石</span>店
+1561
+cue
+[kjúː]
+合図、手がかり
+▶ read nonverbal <span>cue</span>s
+非言語的な<span>合図</span>を読み取る
+1562
+ambulance
+[ǽmbjələns]
+救急車
+▶ Call an <span>ambulance</span> right away.
+すぐに<span>救急車</span>を呼べ
+1563
+estate
+[istéit]
+不動産、所有地、財産
+▶ a <span>real estate</span> agent
+<span>不動産</span>業者
+1564
+commodity
+[kəmάdəti]
+商品、日用品
+▶ an export <span>commodity</span>
+輸出向けの<span>商品</span>
+1565
+departure
+[dipɑ́ːrtʃər]
+出発
+▶ check the <span>departure</span> time
+<span>出発</span>時刻を確認する
+1566
+phase
+[féiz]
+段階、時期
+▶ enter a new <span>phase</span>
+新しい<span>段階</span>に入る
+1567
+thief
+[θíːf]
+泥棒
+▶ a car <span>thief</span>
+車<span>泥棒</span>
+1568
+Saint
+[séint]
+聖～、聖人、聖者
+▶ <span>Saint</span> Valentine
+<span>聖</span>バレンタイン
+1569
+sculpture
+[skʌ́lptʃər]
+彫刻
+▶ painting and <span>sculpture</span>
+絵と<span>彫刻</span>
+1570
+grief
+[gríːf]
+悲しみ
+▶ feel deep <span>grief</span> over his death
+彼の死に深い<span>悲しみ</span>を感じる
+1571
+lane
+[léin]
+車線、小道
+▶ drive in the fast <span>lane</span>
+追い越し<span>車線</span>を走る
+1572
+predator
+[prédətər]
+捕食動物、肉食動物
+▶ <span>predator</span>s like lions
+ライオンのような<span>捕食動物</span>
+1573
+fluid
+[flúːid]
+流体、流動体
+▶ <span>fluid</span>s like water and air
+水や空気のような<span>流体</span>
+1574
+incentive
+[inséntiv]
+はげみ、動機、刺激
+▶ an <span>incentive to</span> work
+仕事の<span>はげみ</span>
+1575
+bride
+[bráid]
+花嫁
+▶ the <span>bride</span> and her father
+<span>花嫁</span>とその父
+1576
+intervention
+[ìntərvénʃən]
+介入、干渉
+▶ military <span>intervention in</span> Iraq
+イラクへの軍事<span>介入</span>
+1577
+margin
+[mɑ́ːrdʒin]
+差、票差、余白
+▶ win by a wide <span>margin</span>
+大<span>差</span>で勝つ
+1578
+biography
+[baiάgrəfi]
+伝記
+▶ a <span>biography</span> of Einstein
+アインシュタインの<span>伝記</span>
+1579
+consent
+[kənsént]
+同意、承諾
+▶ marry without parental <span>consent</span>
+親の<span>同意</span>なしに結婚する
+1580
+volcano
+[vɑlkéinou]
+火山
+▶ a smoking <span>volcano</span>
+噴煙を上げる<span>火山</span>
+1581
+rebel
+[rébl]
+反逆者
+▶ anti-government <span>rebel</span>s
+反政府の<span>反逆者たち</span>
+1582
+metaphor
+[métəfɔ̀ːr]
+比喩、隠喩
+▶ the <span>metaphor</span> of the "melting pot"
+「人種のるつぼ」という<span>比喩</span>
+1583
+legislation
+[lèdʒisléiʃən]
+法律、立法
+▶ gun control <span>legislation</span>
+銃規制の<span>法律</span>
+1584
+lightning
+[láitniŋ]
+雷、稲妻
+▶ be struck by <span>lightning</span>
+<span>雷</span>に打たれる
+1585
+pesticide
+[péstəsàid]
+殺虫剤、除草剤
+▶ the use of <span>pesticide</span>s
+<span>殺虫剤</span>の使用
+1586
+column
+[kάləm]
+コラム、円柱
+▶ write a newspaper <span>column</span>
+新聞の<span>コラム</span>を書く
+1587
+rumor
+[rúːmər]
+うわさ
+▶ spread a <span>rumor</span> about a ghost
+幽霊の<span>うわさ</span>を広める
+1588
+dust
+[dʌ́st]
+ほこり
+▶ tiny <span>dust</span> particles
+細かい<span>ほこり</span>の粒子
+1589
+dialogue
+[dáiəlɔ̀(:)g]
+対話
+▶ a <span>dialogue</span> between two students
+2人の学生の<span>対話</span>
+1590
+kindergarten
+[kíndərgɑ̀ːrtn]
+幼稚園
+▶ learn English in <span>kindergarten</span>
+<span>幼稚園</span>で英語を学ぶ
+1591
+diabetes
+[dàiəbíːtiːz]
+糖尿病
+▶ a patient with type 2 <span>diabetes</span>
+2型<span>糖尿病</span>の患者
+1592
+obesity
+[oubíːsəti]
+肥満
+▶ the risk of <span>obesity</span>
+<span>肥満</span>の危険
+1593
+patent
+[pǽtnt]
+特許
+▶ get a <span>patent</span> for a new invention
+新発明の<span>特許</span>を取る
+1594
+chapter
+[tʃǽptər]
+章
+▶ the first <span>chapter</span> of The Tale of Genji
+源氏物語の第1<span>章</span>
+1595
+Palace
+[pǽləs]
+宮殿
+▶ Buckingham <span>Palace</span>
+バッキンガム<span>宮殿</span>
+1596
+laundry
+[lɔ́ːndri]
+洗濯
+▶ do the <span>laundry</span>
+<span>洗濯</span>をする
+1597
+ward
+[wɔ́ːrd]
+病棟、(行政の)区
+▶ patients in the <span>ward</span>
+<span>病棟</span>の患者
+1598
+outbreak
+[áutbrèik]
+ぼっ発、(疫病などの)発生
+▶ at the <span>outbreak</span> of the war
+戦争が<span>ぼっ発</span>したとき
+1599
+equation
+[ikwéiʒən]
+方程式
+▶ solve a difficult <span>equation</span>
+難しい<span>方程式</span>を解く
+1600
+archaeologist
+[ɑ̀ːrkiάlədʒist]
+考古学者
+▶ bones found by an <span>archaeologist</span>
+<span>考古学者</span>に発見された骨
+`,
+            '1601-1650': `
+名詞
+1601
+corruption
+[kərʌ́pʃən]
+腐敗、堕落
+▶ political <span>corruption</span>
+政治の<span>腐敗</span>
+1602
+germ
+[dʒə́ːrm]
+細菌、病原体
+▶ <span>germ</span>s and viruses
+<span>細菌</span>とウイルス
+1603
+revenue
+[révənjùː]
+収入
+▶ have <span>revenue</span> of $100,000
+10万ドルの<span>収入</span>がある
+1604
+spouse
+[spáus]
+配偶者
+▶ rely on your <span>spouse</span>
+<span>配偶者</span>に頼る
+1605
+epidemic
+[èpidémik]
+流行、伝染病
+▶ cholera <span>epidemic</span>
+コレラの<span>流行</span>
+1606
+mortality
+[mɔːrtǽləti]
+死亡、死亡者数
+▶ America's infant <span>mortality</span> rate
+アメリカの幼児<span>死亡</span>率
+1607
+syndrome
+[síndroum]
+症候群
+▶ economy class <span>syndrome</span>
+エコノミークラス<span>症候群</span>
+1608
+retail
+[ríːteil]
+小売り
+▶ the <span>retail</span> price
+<span>小売り</span>の値段
+1609
+dose
+[dóus]
+量、(1回分の)服用量
+▶ take a large <span>dose of</span> vitamin C
+大<span>量</span>のビタミンCを服用する
+1610
+beverage
+[bévəridʒ]
+飲料
+▶ alcoholic <span>beverage</span>s
+アルコール<span>飲料</span>
+1611
+metabolism
+[mətǽbəlìzm]
+新陳代謝
+▶ regulate <span>metabolism</span>
+<span>新陳代謝</span>を調整する
+1612
+hybrid
+[háibrid]
+交配種、雑種
+▶ a <span>hybrid</span> of two plants
+2つの植物の<span>交配種</span>
+1613
+scent
+[sént]
+香り、におい
+▶ the sweet <span>scent</span> of roses
+バラの甘い<span>香り</span>
+1614
+inflammation
+[ìnfləméiʃən]
+炎症
+▶ reduce <span>inflammation</span> in the eye
+眼の<span>炎症</span>を軽減する
+1615
+pill
+[píl]
+錠剤、薬
+▶ take sleeping <span>pill</span>s
+睡眠<span>薬</span>を飲む
+形容詞
+1616
+grave
+[gréiv]
+重大な、重々しい
+▶ be in <span>grave</span> danger
+<span>重大な</span>危機にある
+1617
+fertile
+[fə́ːrtl]
+肥えた
+▶ <span>fertile soil</span>
+<span>肥えた</span>土壌
+1618
+hostile
+[hάstl]
+反感を持つ、敵意を持った
+▶ be <span>hostile to</span> the government
+政府に<span>反感を持つ</span>
+1619
+indispensable
+[ìndispénsəbl]
+不可欠だ、なしですませられない
+▶ Water is <span>indispensable to</span> life.
+水は生命にとって<span>不可欠だ</span>
+1620
+oriented
+[ɔ́ːrièntid]
+志向の、関心がある
+▶ an information-<span>oriented</span> society
+情報<span>志向の</span>社会
+1621
+splendid
+[spléndid]
+すばらしい、壮麗な
+▶ a <span>splendid</span> view
+<span>すばらしい</span>景色
+1622
+competent
+[kάmpətənt]
+有能な
+▶ a <span>competent</span> teacher
+<span>有能な</span>教師
+1623
+supreme
+[supríːm]
+最高の
+▶ <span>supreme</span> joy
+<span>最高の</span>喜び
+1624
+straightforward
+[streitfɔ́ːrwərd]
+わかりやすい、率直な
+▶ <span>straightforward</span> language
+<span>わかりやすい</span>言葉遣い
+1625
+sacred
+[séikrid]
+聖、神聖な
+▶ a land <span>sacred</span> to Islam
+イスラム教徒の<span>聖</span>地
+1626
+bold
+[bóuld]
+大胆な
+▶ take <span>bold</span> action
+<span>大胆な</span>行動をとる
+1627
+uneasy
+[ʌníːzi]
+不安な
+▶ feel <span>uneasy</span> about the future
+将来について<span>不安な</span>気持ちになる
+1628
+neat
+[níːt]
+きちんとした、こぎれいな
+▶ <span>neat</span> clothes
+<span>きちんとした</span>服
+1629
+shallow
+[ʃǽlou]
+浅い
+▶ a <span>shallow</span> river
+<span>浅い</span>川
+1630
+fake
+[féik]
+にせ物の
+▶ make a <span>fake</span> cake
+<span>にせ物の</span>ケーキを作る
+1631
+superficial
+[sùːpərfíʃəl]
+表面的な、うわべの
+▶ a <span>superficial</span> difference
+<span>表面的な</span>違い
+1632
+absurd
+[əbsə́ːrd]
+ばかげた
+▶ a completely <span>absurd</span> idea
+まったく<span>ばかげた</span>考え
+1633
+fragile
+[frǽdʒəl]
+壊れやすい、もろい
+▶ <span>fragile</span> items
+<span>壊れやすい</span>物
+1634
+respectable
+[rispéktəbl]
+ちゃんとした、立派な
+▶ a girl from a <span>respectable</span> family
+<span>ちゃんとした</span>家の娘
+1635
+magnificent
+[mægnífisnt]
+すばらしい、立派な
+▶ a <span>magnificent</span> view
+<span>すばらしい</span>光景
+1636
+infinite
+[ínfənət]
+無限の
+▶ an <span>infinite number</span> of stars
+<span>無限の</span>数の星
+1637
+comprehensive
+[kàmprihénsiv]
+包括的な、総合的な
+▶ a <span>comprehensive</span> study
+<span>包括的</span>研究
+1638
+steep
+[stíːp]
+険しい、急な
+▶ a <span>steep</span> slope
+<span>険しい</span>坂
+1639
+gross
+[gróus]
+総計の
+▶ the <span>gross</span> domestic product
+国内<span>総</span>生産
+1640
+subsequent
+[sʌ́bsikwənt]
+次に起こる、後の
+▶ prepare for <span>subsequent</span> events
+<span>次に起こる</span>出来事に備える
+1641
+sincere
+[sinsíər]
+心からの、誠実な
+▶ my <span>sincere</span> apologies
+私の<span>心からの</span>謝罪
+1642
+toxic
+[tάksik]
+有毒な
+▶ a <span>toxic</span> gas
+<span>有毒な</span>ガス
+1643
+neutral
+[njúːtrəl]
+中立の、公平な
+▶ take a <span>neutral</span> position
+<span>中立の</span>立場をとる
+1644
+diligent
+[dílidʒənt]
+勤勉な
+▶ a <span>diligent</span> student
+<span>勤勉な</span>学生
+1645
+sore
+[sɔ́ːr]
+痛い
+▶ have a <span>sore</span> throat
+のどが<span>痛い</span>
+1646
+contaminated
+[kəntǽminèitid]
+汚染された
+▶ drink <span>contaminated</span> water
+<span>汚染された</span>水を飲む
+1647
+ambiguous
+[æmbígjuəs]
+あいまいな
+▶ an <span>ambiguous</span> expression
+<span>あいまいな</span>表現
+1648
+oral
+[ɔ́ːrəl]
+口述の
+▶ an <span>oral</span> examination
+<span>口述の</span>試験
+1649
+restless
+[réstləs]
+落ち着かない、そわそわした
+▶ spend a <span>restless</span> night
+<span>落ち着かない</span>夜を過ごす
+1650
+rotten
+[rάtn]
+腐った
+▶ smell like <span>rotten</span> eggs
+<span>腐った</span>卵のようににおう
+`,
+            '1651-1700': `
+形容詞
+1651
+vigorous
+[vígərəs]
+精力的な、元気はつらつな
+▶ <span>vigorous</span> activity
+<span>精力的な</span>活動
+1652
+immense
+[iméns]
+莫大な
+▶ an <span>immense</span> amount of information
+<span>莫大な</span>量の情報
+1653
+metropolitan
+[mètrəpάlətən]
+大都市の
+▶ <span>metropolitan</span> areas
+<span>大都市</span>圏
+1654
+punctual
+[pʌ́ŋktʃuəl]
+時間をきっちり守る
+▶ be <span>punctual</span> for an appointment
+約束の<span>時間をきっちり守る</span>
+1655
+solitary
+[sάlətèri]
+孤独な
+▶ a <span>solitary</span> old man
+<span>孤独な</span>老人
+1656
+collective
+[kəléktiv]
+集団の
+▶ take <span>collective</span> action
+<span>集団</span>行動を起こす
+1657
+diplomatic
+[dìpləmǽtik]
+外交の、外交的な
+▶ break off <span>diplomatic</span> relations
+<span>外交</span>関係を断絶する
+1658
+nasty
+[nǽsti]
+不快な
+▶ a <span>nasty</span> smell
+<span>不快な</span>におい
+1659
+helpless
+[hélplis]
+無力な
+▶ a <span>helpless</span> baby
+<span>無力な</span>赤ん坊
+1660
+explicit
+[iksplísit]
+明確な
+▶ give <span>explicit</span> instructions
+<span>明確な</span>指示を与える
+1661
+bankrupt
+[bǽŋkrʌpt]
+破産した
+▶ His company <span>went bankrupt</span>.
+彼の会社は<span>破産した</span>
+1662
+eternal
+[itə́ːrnəl]
+永遠の
+▶ the hope of <span>eternal</span> life
+<span>永遠の</span>命の望み
+1663
+sole
+[sóul]
+唯一の
+▶ the <span>sole</span> survivor
+<span>唯一の</span>生存者
+1664
+sour
+[sáuər]
+すっぱい
+▶ <span>sour</span> grapes
+<span>すっぱい</span>ブドウ
+1665
+notable
+[nóutəbl]
+注目すべき
+▶ a <span>notable</span> exception
+<span>注目すべき</span>例外
+1666
+affluent
+[ǽfluənt]
+裕福な
+▶ an <span>affluent</span> society
+<span>裕福な</span>社会
+1667
+naked
+[néikid]
+裸の
+▶ a <span>naked</span> man
+<span>裸の</span>男
+1668
+vocal
+[vóukl]
+発声の、声の
+▶ the <span>vocal</span> organ
+<span>発声</span>器官
+1669
+feminine
+[féminən]
+女性の、女性的な
+▶ <span>feminine</span> beauty
+<span>女性の</span>美しさ
+1670
+vacant
+[véikənt]
+空いている
+▶ sit down in a <span>vacant</span> seat
+<span>空いている</span>席に座る
+1671
+exotic
+[igzάtik]
+外来の、異国風の
+▶ native and <span>exotic</span> animals
+在来と<span>外来の</span>動物
+1672
+rigid
+[rídʒid]
+厳格な、がんこな
+▶ <span>rigid</span> rules
+<span>厳格な</span>規則
+1673
+humid
+[hjúːmid]
+蒸し暑い、多湿の
+▶ <span>humid</span> summer weather
+夏の<span>蒸し暑い</span>天気
+1674
+outstanding
+[àutstǽndiŋ]
+傑出した、目立った
+▶ an <span>outstanding</span> scholar
+<span>傑出した</span>学者
+1675
+addicted
+[ədíktid]
+中毒である、～に熱中した
+▶ <span>be addicted to</span> drugs
+麻薬<span>中毒である</span>
+1676
+vulnerable
+[vʌ́lnərəbl]
+受けやすい、傷つきやすい
+▶ be <span>vulnerable to</span> attack
+攻撃を<span>受けやすい</span>
+1677
+spontaneous
+[spɑntéiniəs]
+自然に起こる、自発的な
+▶ <span>spontaneous</span> laughter
+<span>自然に起こる</span>笑い
+1678
+greedy
+[gríːdi]
+どん欲だ
+▶ be <span>greedy</span> for money
+金に<span>どん欲だ</span>
+1679
+trivial
+[tríviəl]
+ささいな、とるに足らない
+▶ a <span>trivial</span> matter
+<span>ささいな</span>事柄
+1680
+per capita
+[pər kǽpətə]
+一人当たりの
+▶ Japan's <span>per capita</span> income
+日本の<span>一人当たりの</span>国民所得
+1681
+inherent
+[inhíərənt]
+元から伴う、本来備わった
+▶ the risks <span>inherent in</span> the sport
+そのスポーツに<span>元から伴う</span>危険
+1682
+promising
+[prάmisiŋ]
+前途有望な
+▶ a <span>promising</span> new actress
+<span>前途有望な</span>新人女優
+1683
+physiological
+[fìziəlɑ́dʒikl]
+生理的な
+▶ <span>physiological</span> reactions
+<span>生理的な</span>反応
+1684
+clinical
+[klínikl]
+臨床の
+▶ <span>clinical trials</span> of new drugs
+新薬の<span>臨床</span>試験
+1685
+chronic
+[krάnik]
+慢性の
+▶ <span>chronic</span> disease
+<span>慢性の</span>病気
+1686
+geological
+[dʒìːəlάdʒikl]
+地質学的な
+▶ divisions of <span>geological</span> time
+<span>地質学的な</span>時代区分
+1687
+countless
+[káuntləs]
+無数の
+▶ <span>countless</span> species of insects
+<span>無数の</span>種類の昆虫
+1688
+innate
+[inéit]
+先天的な
+▶ <span>innate</span> ability to learn
+<span>先天的な</span>学習能力
+1689
+alert
+[əléːrt]
+用心する
+▶ be <span>alert to</span> every sound
+あらゆる音に<span>用心する</span>
+1690
+autonomous
+[ɔːtάnəməs]
+自動の、自律した
+▶ <span>autonomous</span> cars
+<span>自動運転</span>車
+副詞
+1691
+simultaneously
+[sàiməltéiniəsli]
+同時に
+▶ occur <span>simultaneously</span>
+<span>同時に</span>起こる
+1692
+utterly
+[ʌ́tərli]
+まったく、完全に
+▶ <span>utterly</span> different from others
+他人と<span>まったく</span>異なる
+1693
+drastically
+[drǽstikəli]
+劇的に、徹底的に
+▶ change <span>drastically</span>
+<span>劇的に</span>変化する
+1694
+not necessarily
+[nèsəsérəli]
+必ずしも～でない
+▶ <span>not necessarily</span> true
+<span>必ずしも</span>本当でない
+1695
+thereby
+[ðèərbái]
+そうすることで
+▶ He always tells the truth, <span>thereby</span> avoiding trouble.
+彼はいつも真実を述べ、<span>そうすることで</span>、面倒を避けている
+1696
+frankly
+[frǽŋkli]
+率直に
+▶ speak <span>frankly</span>
+<span>率直に</span>話す
+1697
+namely
+[néimli]
+すなわち
+▶ the two cities, <span>namely</span>, Paris and Tokyo
+その2つの都市、<span>すなわち</span>パリと東京
+1698
+hence
+[héns]
+だから
+▶ He tried hard, <span>hence</span> his success.
+彼は努力した。<span>だから</span>成功した。
+1699
+via
+[váiə]
+～経由で
+▶ pay bills <span>via</span> the Internet
+インターネット<span>経由で</span>代金を払う
+1700
+owing to
+[óuiŋ]
+～のために
+▶ <span>owing to</span> lack of fuel
+燃料不足<span>のために</span>
+`,
+        };
+        const STATUS_NOT_YET = "not_yet", STATUS_OK = "ok", STATUS_PERFECT = "perfect", ALL_STATUSES = "all_statuses";
+        const LOCAL_STORAGE_KEY = 'flashcardUserData_v10_1551-1700';
+
+        // --- DOM Elements ---
+        const tabContainer = document.getElementById('tab-container');
+        const japaneseDisplayElement = document.getElementById('japanese-display');
+        const englishDisplayElement = document.getElementById('english-display');
+        const pronunciationSpan = document.getElementById('pronunciation-span');
+        const posSpan = document.getElementById('pos-span');
+        const exampleEnSpan = document.getElementById('example-en-span');
+        const exampleJaSpan = document.getElementById('example-ja-span');
+        const wordIdSpan = document.getElementById('word-id-span');
+        const flashcardArea = document.getElementById('flashcard-area');
+        const noWordsMessageElement = document.getElementById('no-words-message');
+        const flashcardElement = document.getElementById('flashcard');
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const progressIndicatorElement = document.getElementById('progress-indicator');
+        const settingsToggleButton = document.getElementById('settings-toggle-button');
+        const settingsDropdownMenu = document.getElementById('settings-dropdown-menu');
+        const resetDataButton = document.getElementById('reset-data-button');
+        const randomModeCheckbox = document.getElementById('random-mode-checkbox');
+        const playAudioButton = document.getElementById('play-audio-button');
+        const seekBar = document.getElementById('seek-bar');
+        const statusFilterButtons = document.querySelectorAll('.status-filters button');
+        const statusButtons = document.querySelectorAll('.status-buttons button');
+        const detailsContainer = document.getElementById('details-container');
+
+        let allWordDataSets = {};
+        let currentFilteredWords = [];
+        let currentWordIndex = 0;
+        let isFlipped = false;
+        let currentStatusFilter = ALL_STATUSES;
+        let isRandomMode = false;
+        let activeSelection = 'all';
+        
+        const synth = window.speechSynthesis;
+        let voices = [];
+
+        function populateVoiceList() {
+            if (typeof speechSynthesis === 'undefined') {
+                playAudioButton.style.display = 'none'; return;
+            }
+            voices = synth.getVoices();
+            if (voices.length === 0 && 'onvoiceschanged' in synth) {
+                synth.onvoiceschanged = populateVoiceList;
+            }
+        }
+        
+        function parseWordData(textData) {
+            const words = [];
+            const lines = textData.trim().split(/\r\n|\r|\n/);
+            let i = 0;
+            let currentPos = '';
+            const posHeaders = ['動詞', '名詞', '形容詞', '副詞'];
+            while (i < lines.length) {
+                let line = lines[i]?.trim();
+                if (!line) { i++; continue; }
+                if (posHeaders.includes(line)) { currentPos = line; i++; continue; }
+                if (line.match(/^\d{4}(-\d)?$/)) {
+                    const wordData = { id: line, word: lines[i + 1] || '', pronunciation: lines[i + 2] || '', meaning: lines[i + 3] || '', exampleEn: '', exampleJa: '', pos: currentPos, status: STATUS_NOT_YET };
+                    i += 4;
+                    while (i < lines.length && lines[i] && !lines[i].trim().match(/^\d{4}(-\d)?$/) && !posHeaders.includes(lines[i].trim())) {
+                        let optLine = lines[i].trim();
+                        if (optLine.startsWith('▶')) {
+                            wordData.exampleEn = optLine.substring(1).trim();
+                            if (i + 1 < lines.length && lines[i + 1] && !lines[i + 1].trim().match(/^\d{4}(-\d)?$/)) { i++; wordData.exampleJa = lines[i].trim(); }
+                        }
+                        i++;
+                    }
+                    words.push(wordData);
+                } else { i++; }
+            }
+            return words;
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    Object.keys(wordDataSetsText).forEach(key => {
+                        const originalWords = parseWordData(wordDataSetsText[key]);
+                        const savedWords = parsedData[key] || [];
+                        const savedWordMap = new Map(savedWords.map(word => [word.id, word]));
+                        allWordDataSets[key] = originalWords.map(word => savedWordMap.has(word.id) ? { ...word, ...savedWordMap.get(word.id) } : word);
+                    });
+                    return;
+                } catch (e) { console.error("localStorage読み込み失敗:", e); }
+            }
+            Object.keys(wordDataSetsText).forEach(range => { allWordDataSets[range] = parseWordData(wordDataSetsText[range]); });
+        }
+        function saveData() { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allWordDataSets)); }
+        function getActiveRanges() {
+            if (activeSelection === 'all') return Object.keys(allWordDataSets).filter(key => allWordDataSets[key]?.length > 0);
+            return Array.isArray(activeSelection) ? activeSelection.filter(key => allWordDataSets[key]?.length > 0) : [];
+        }
+
+        function updateFilterButtonLabels() {
+            const counts = { [ALL_STATUSES]: 0, [STATUS_NOT_YET]: 0, [STATUS_OK]: 0, [STATUS_PERFECT]: 0 };
+            getActiveRanges().forEach(range => {
+                allWordDataSets[range]?.forEach(word => { counts[word.status]++; counts[ALL_STATUSES]++; });
+            });
+            statusFilterButtons.forEach(button => {
+                const filter = button.dataset.statusFilter;
+                const baseText = button.dataset.baseText || button.textContent.split(' (')[0];
+                button.dataset.baseText = baseText;
+                button.textContent = `${baseText} (${counts[filter] || 0})`;
+            });
+        }
+
+        function applyFilters() {
+            const ranges = getActiveRanges();
+            let tempWords = ranges.flatMap(range => allWordDataSets[range] || []);
+            if (currentStatusFilter !== ALL_STATUSES) {
+                tempWords = tempWords.filter(word => word.status === currentStatusFilter);
+            }
+            currentFilteredWords = isRandomMode ? [...tempWords].sort(() => Math.random() - 0.5) : [...tempWords];
+            currentWordIndex = 0;
+            isFlipped = false;
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            updateFilterButtonLabels();
+            updateActiveFilterButtonsUI();
+            updateSeekBar();
+            
+            detailsContainer.classList.toggle('show', isFlipped);
+
+            if (currentFilteredWords.length === 0) {
+                flashcardArea.classList.add('hidden');
+                noWordsMessageElement.classList.remove('hidden');
+                noWordsMessageElement.textContent = "この条件に一致する単語はありません。";
+                progressIndicatorElement.textContent = "0 / 0";
+                detailsContainer.classList.remove('show');
+                return;
+            }
+            flashcardArea.classList.remove('hidden');
+            noWordsMessageElement.classList.add('hidden');
+            
+            const word = currentFilteredWords[currentWordIndex];
+            
+            japaneseDisplayElement.innerHTML = word.meaning;
+            englishDisplayElement.textContent = word.word;
+            pronunciationSpan.textContent = word.pronunciation;
+            posSpan.textContent = word.pos;
+            exampleEnSpan.innerHTML = word.exampleEn;
+            exampleJaSpan.innerHTML = word.exampleJa;
+            wordIdSpan.textContent = word.id;
+            
+            flashcardElement.classList.toggle('is-flipped', isFlipped);
+            statusButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.status === word.status));
+            progressIndicatorElement.textContent = `${currentWordIndex + 1} / ${currentFilteredWords.length}`;
+        }
+        
+        function updateActiveFilterButtonsUI() {
+            statusFilterButtons.forEach(btn => btn.classList.toggle('active-status-filter', btn.dataset.statusFilter === currentStatusFilter));
+        }
+        function updateSeekBar() {
+            const max = currentFilteredWords.length > 0 ? currentFilteredWords.length - 1 : 0;
+            seekBar.max = max;
+            seekBar.value = currentWordIndex;
+            seekBar.style.display = isRandomMode ? 'none' : 'block';
+        }
+
+        function handleTabClick(range) {
+            if (range === 'all') { activeSelection = 'all'; } 
+            else {
+                if (activeSelection === 'all') activeSelection = [];
+                const index = activeSelection.indexOf(range);
+                if (index > -1) activeSelection.splice(index, 1);
+                else activeSelection.push(range);
+                const allRanges = Object.keys(allWordDataSets).filter(key => allWordDataSets[key]?.length > 0);
+                if (activeSelection.length === 0 || activeSelection.length === allRanges.length) {
+                    activeSelection = 'all';
+                }
+            }
+            updateTabUI();
+            applyFilters();
+        }
+
+        function updateTabUI() {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                const range = btn.dataset.range;
+                btn.classList.toggle('active', range === 'all' ? activeSelection === 'all' : Array.isArray(activeSelection) && activeSelection.includes(range));
+            });
+        }
+        
+        function setupTabs() {
+            tabContainer.innerHTML = '';
+            const createButton = (range, text) => {
+                const button = document.createElement('button');
+                button.className = 'tab-button';
+                button.dataset.range = range;
+                button.textContent = text;
+                button.addEventListener('click', () => handleTabClick(range));
+                return button;
+            };
+            const totalCount = Object.values(allWordDataSets).reduce((sum, words) => sum + (words?.length || 0), 0);
+            tabContainer.appendChild(createButton('all', `全体 (${totalCount})`));
+            ['1551-1600', '1601-1650', '1651-1700'].forEach(range => {
+                const count = allWordDataSets[range]?.length || 0;
+                const button = createButton(range, `${range} (${count})`);
+                if (count === 0) button.disabled = true;
+                tabContainer.appendChild(button);
+            });
+        }
+        
+        flashcardElement.addEventListener('click', (event) => {
+            if (currentFilteredWords.length === 0) return;
+            isFlipped = !isFlipped;
+            updateDisplay();
+        });
+        
+        playAudioButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (!isFlipped || currentFilteredWords.length === 0) return;
+            const word = currentFilteredWords[currentWordIndex];
+            const wordToSpeak = word.word.replace(/\s*\(.*\)\s*/g, '').trim();
+            if (synth.speaking) synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+            const englishVoice = voices.find(voice => voice.lang.startsWith('en-'));
+            utterance.voice = englishVoice || null;
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            synth.speak(utterance);
+        });
+        
+        statusButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentFilteredWords.length === 0) return;
+                const newStatus = button.dataset.status;
+                const word = currentFilteredWords[currentWordIndex];
+                const originalWord = allWordDataSets[Object.keys(allWordDataSets).find(key => allWordDataSets[key].some(w => w.id === word.id))]?.find(w => w.id === word.id);
+                if (originalWord) originalWord.status = newStatus;
+                word.status = newStatus;
+                saveData();
+                const shouldBeRemoved = (currentStatusFilter !== ALL_STATUSES && currentStatusFilter !== newStatus);
+                updateDisplay();
+                if (shouldBeRemoved) {
+                    document.getElementById('status-message').textContent = "フィルターによりリストから除外されます。";
+                    setTimeout(() => {
+                        applyFilters();
+                        document.getElementById('status-message').textContent = "";
+                    }, 1200);
+                }
+            });
+        });
+        
+        const changeWord = (direction) => {
+            if (currentFilteredWords.length === 0) return;
+            flashcardElement.style.transition = 'none';
+            detailsContainer.style.transition = 'none';
+            currentWordIndex = (currentWordIndex + direction + currentFilteredWords.length) % currentFilteredWords.length;
+            isFlipped = false; 
+            synth.cancel();
+            updateDisplay();
+            setTimeout(() => {
+                flashcardElement.style.transition = 'transform 0.5s';
+                detailsContainer.style.transition = 'max-height 0.4s ease-out, margin-top 0.4s ease-out, opacity 0.4s ease-out';
+            }, 0);
+        };
+
+        prevButton.addEventListener('click', () => changeWord(-1));
+        nextButton.addEventListener('click', () => changeWord(1));
+
+        seekBar.addEventListener('input', (e) => {
+            if (!isRandomMode) { 
+                changeWord(parseInt(e.target.value, 10) - currentWordIndex);
+            }
+        });
+
+        statusFilterButtons.forEach(button => button.addEventListener('click', () => { currentStatusFilter = button.dataset.statusFilter; applyFilters(); }));
+        randomModeCheckbox.addEventListener('change', (e) => { isRandomMode = e.target.checked; applyFilters(); });
+        settingsToggleButton.addEventListener('click', (e) => { e.stopPropagation(); settingsDropdownMenu.style.display = settingsDropdownMenu.style.display === 'block' ? 'none' : 'block'; });
+        document.body.addEventListener('click', () => { if (settingsDropdownMenu.style.display === 'block') settingsDropdownMenu.style.display = 'none'; });
+        resetDataButton.addEventListener('click', () => {
+            if (confirm("本当に全ての学習記録をリセットしますか？")) { localStorage.removeItem(LOCAL_STORAGE_KEY); initializeApp(); settingsDropdownMenu.style.display = 'none'; }
+        });
+
+        function initializeApp() {
+            populateVoiceList();
+            loadData();
+            setupTabs();
+            activeSelection = 'all';
+            currentStatusFilter = ALL_STATUSES;
+            isRandomMode = randomModeCheckbox.checked;
+            updateTabUI();
+            applyFilters();
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>
